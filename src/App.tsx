@@ -5,8 +5,17 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { CRMLayout } from "@/components/CRMLayout";
+import CRMPage from "./pages/CRMPage";
 
 const queryClient = new QueryClient();
+
+const crmRoutes = [
+  "/people", "/companies", "/lists", "/data-enrichment",
+  "/sequences", "/emails", "/calls", "/tasks",
+  "/meetings", "/conversations", "/deals", "/ai-assistant",
+  "/add-teammates", "/deliverability", "/settings",
+];
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -16,7 +25,17 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {crmRoutes.map((path) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <CRMLayout>
+                  <CRMPage />
+                </CRMLayout>
+              }
+            />
+          ))}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
