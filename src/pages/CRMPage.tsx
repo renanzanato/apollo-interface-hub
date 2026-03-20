@@ -1,22 +1,17 @@
 import { useLocation } from "react-router-dom";
-import { Users, Building2, ListFilter, Database, Send, Mail, Phone, CheckSquare, CalendarDays, MessageSquare, DollarSign, Bot, UserPlus, Shield, Settings } from "lucide-react";
+import { Users, Building2, ListFilter, Database, Send, MessageSquare, CheckSquare, DollarSign, Bot, Radio } from "lucide-react";
 
 const pageInfo: Record<string, { title: string; icon: React.ElementType; description: string }> = {
-  "/people": { title: "People", icon: Users, description: "Find and manage your contacts database. Search through millions of verified contacts." },
-  "/companies": { title: "Companies", icon: Building2, description: "Explore company profiles, org charts, and buying signals." },
-  "/lists": { title: "Lists", icon: ListFilter, description: "Organize your prospects into targeted lists for outreach campaigns." },
-  "/data-enrichment": { title: "Data Enrichment", icon: Database, description: "Enrich your contact and company data with verified information." },
-  "/sequences": { title: "Sequences", icon: Send, description: "Create automated multi-step outreach sequences." },
-  "/emails": { title: "Emails", icon: Mail, description: "Manage your email campaigns and track engagement metrics." },
-  "/calls": { title: "Calls", icon: Phone, description: "Log calls, track outcomes, and manage your calling workflow." },
-  "/tasks": { title: "Tasks", icon: CheckSquare, description: "Stay on top of your daily tasks and follow-ups." },
-  "/meetings": { title: "Meetings", icon: CalendarDays, description: "Schedule and manage your meetings with prospects." },
-  "/conversations": { title: "Conversations", icon: MessageSquare, description: "Track all your conversations across channels in one place." },
-  "/deals": { title: "Deals", icon: DollarSign, description: "Manage your deal pipeline and track revenue opportunities." },
-  "/ai-assistant": { title: "AI Assistant", icon: Bot, description: "Get AI-powered insights and recommendations for your outreach." },
-  "/add-teammates": { title: "Add Teammates", icon: UserPlus, description: "Invite team members to collaborate on outreach and deals." },
-  "/deliverability": { title: "Deliverability Suite", icon: Shield, description: "Monitor and optimize your email deliverability." },
-  "/settings": { title: "Admin Settings", icon: Settings, description: "Configure your workspace, integrations, and team settings." },
+  "/people": { title: "Pessoas", icon: Users, description: "Gerencie seu mailing de contatos. Busque e organize seus leads." },
+  "/companies": { title: "Empresas", icon: Building2, description: "Explore perfis de empresas e sinais de compra." },
+  "/lists": { title: "Listas", icon: ListFilter, description: "Organize seus prospects em listas e segmentações para campanhas." },
+  "/data-enrichment": { title: "Aquecimento de Dados", icon: Database, description: "Aqueça e enriqueça seus dados de contatos e empresas com as APIs da Pluo." },
+  "/signals": { title: "Sinais", icon: Radio, description: "Configure sinais e alertas para identificar empresas que precisam ser prospectadas." },
+  "/sequences": { title: "Sequências", icon: Send, description: "Crie cadências multi-persona por conta com ABM via WhatsApp." },
+  "/whatsapp": { title: "WhatsApp", icon: MessageSquare, description: "Gerencie suas conversas e campanhas via WhatsApp." },
+  "/tasks": { title: "Tarefas", icon: CheckSquare, description: "Acompanhe suas tarefas diárias e follow-ups por conta e contato." },
+  "/deals": { title: "Deals", icon: DollarSign, description: "Gerencie seu pipeline de negócios e oportunidades de receita." },
+  "/ai-assistant": { title: "AI Assistentes", icon: Bot, description: "Assistentes de IA para análise, quebra de objeção, reunião comercial e GTM." },
 };
 
 export default function CRMPage() {
@@ -38,12 +33,12 @@ export default function CRMPage() {
 
         <div className="bg-card border border-border rounded-lg p-12 text-center crm-section-enter" style={{ animationDelay: "100ms" }}>
           <info.icon className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No {info.title.toLowerCase()} yet</h3>
+          <h3 className="text-lg font-medium text-foreground mb-2">Nenhum registro ainda</h3>
           <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-            Get started by creating your first {info.title.toLowerCase().replace(/s$/, "")} or importing existing data.
+            Comece criando seu primeiro registro ou importando dados existentes.
           </p>
           <button className="bg-primary text-primary-foreground px-5 py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity active:scale-[0.97]">
-            Get Started
+            Começar
           </button>
         </div>
       </div>

@@ -11,10 +11,9 @@ import CRMPage from "./pages/CRMPage";
 const queryClient = new QueryClient();
 
 const crmRoutes = [
-  "/people", "/companies", "/lists", "/data-enrichment",
-  "/sequences", "/emails", "/calls", "/tasks",
-  "/meetings", "/conversations", "/deals", "/ai-assistant",
-  "/add-teammates", "/deliverability", "/settings",
+  "/people", "/companies", "/lists", "/data-enrichment", "/signals",
+  "/sequences", "/whatsapp", "/tasks",
+  "/deals", "/ai-assistant",
 ];
 
 const App = () => (
