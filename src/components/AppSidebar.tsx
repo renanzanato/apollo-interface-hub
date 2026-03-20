@@ -1,7 +1,7 @@
 import {
   Home, Bot, Search, Building2, ListFilter, Database,
-  Send, Mail, Phone, CheckSquare, Handshake, CalendarDays,
-  MessageSquare, DollarSign, Users, Settings, Shield, ChevronDown, ChevronRight, Sparkles, UserPlus
+  Send, MessageSquare, CheckSquare, Handshake,
+  DollarSign, ChevronDown, ChevronRight, Sparkles, Radio
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -15,7 +15,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -31,35 +30,33 @@ const navGroups: NavGroup[] = [
     icon: Home,
     items: [
       { title: "Home", url: "/", icon: Home },
-      { title: "AI Assistant", url: "/ai-assistant", icon: Bot, badge: "New" },
+      { title: "AI Assistentes", url: "/ai-assistant", icon: Bot, badge: "New" },
     ],
   },
   {
-    label: "Prospect and enrich",
+    label: "Prospecção e aquecimento",
     icon: Search,
     items: [
-      { title: "People", url: "/people", icon: Users },
-      { title: "Companies", url: "/companies", icon: Building2 },
-      { title: "Lists", url: "/lists", icon: ListFilter },
-      { title: "Data enrichment", url: "/data-enrichment", icon: Database },
+      { title: "Pessoas", url: "/people", icon: MessageSquare },
+      { title: "Empresas", url: "/companies", icon: Building2 },
+      { title: "Listas", url: "/lists", icon: ListFilter },
+      { title: "Aquecimento de dados", url: "/data-enrichment", icon: Database },
+      { title: "Sinais", url: "/signals", icon: Radio },
     ],
   },
   {
-    label: "Engage",
+    label: "Engajamento",
     icon: Send,
     items: [
-      { title: "Sequences", url: "/sequences", icon: Send },
-      { title: "Emails", url: "/emails", icon: Mail },
-      { title: "Calls", url: "/calls", icon: Phone },
-      { title: "Tasks", url: "/tasks", icon: CheckSquare },
+      { title: "Sequências", url: "/sequences", icon: Send },
+      { title: "WhatsApp", url: "/whatsapp", icon: MessageSquare },
+      { title: "Tarefas", url: "/tasks", icon: CheckSquare },
     ],
   },
   {
-    label: "Win deals",
+    label: "Negócios",
     icon: Handshake,
     items: [
-      { title: "Meetings", url: "/meetings", icon: CalendarDays },
-      { title: "Conversations", url: "/conversations", icon: MessageSquare },
       { title: "Deals", url: "/deals", icon: DollarSign },
     ],
   },
@@ -70,9 +67,9 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "Prospect and enrich": true,
-    "Engage": true,
-    "Win deals": true,
+    "Prospecção e aquecimento": true,
+    "Engajamento": true,
+    "Negócios": true,
   });
 
   const toggleGroup = (label: string) => {
@@ -87,7 +84,7 @@ export function AppSidebar() {
         {/* Logo */}
         <div className="px-4 py-3 flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary shrink-0" />
-          {!collapsed && <span className="text-lg font-bold text-foreground">CRM Pro</span>}
+          {!collapsed && <span className="text-lg font-bold text-foreground">Pipa CRM</span>}
         </div>
 
         {navGroups.map((group) => (
@@ -141,50 +138,6 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-
-      <SidebarFooter className="border-t border-border p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <NavLink
-                to="/add-teammates"
-                end
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium bg-accent text-accent-foreground rounded-md hover:opacity-90 transition-opacity"
-                activeClassName=""
-              >
-                <UserPlus className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>Add teammates</span>}
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <NavLink
-                to="/deliverability"
-                end
-                className="flex items-center gap-3 px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors"
-                activeClassName="bg-primary/10 text-primary font-medium"
-              >
-                <Shield className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>Deliverability suite</span>}
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <NavLink
-                to="/settings"
-                end
-                className="flex items-center gap-3 px-4 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors"
-                activeClassName="bg-primary/10 text-primary font-medium"
-              >
-                <Settings className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>Admin Settings</span>}
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }
