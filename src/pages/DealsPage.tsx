@@ -421,7 +421,7 @@ function FullJourneyView({ onCardClick }: { onCardClick: (card: AccountCard, sta
               </div>
               <div className="px-2.5 pb-2.5 space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
                 {stage.cards.map((card) => (
-                  <AccountCardComponent key={card.id} card={card} showTransition />
+                  <AccountCardComponent key={card.id} card={card} showTransition onClick={() => onCardClick(card, stage.title, funnels[1].name)} />
                 ))}
               </div>
             </div>
