@@ -31,6 +31,7 @@ const navGroups: NavGroup[] = [
     items: [
       { title: "Home", url: "/", icon: Home },
       { title: "AI Assistentes", url: "/ai-assistant", icon: Bot, badge: "New" },
+      { title: "Deals", url: "/deals", icon: DollarSign },
     ],
   },
   {
@@ -51,13 +52,6 @@ const navGroups: NavGroup[] = [
       { title: "Sequências", url: "/sequences", icon: Send },
       { title: "WhatsApp", url: "/whatsapp", icon: MessageSquare },
       { title: "Tarefas", url: "/tasks", icon: CheckSquare },
-    ],
-  },
-  {
-    label: "Negócios",
-    icon: Handshake,
-    items: [
-      { title: "Deals", url: "/deals", icon: DollarSign },
     ],
   },
 ];
