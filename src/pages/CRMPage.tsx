@@ -3,10 +3,9 @@ import { Users, Building2, ListFilter, Database, Send, MessageSquare, CheckSquar
 
 const pageInfo: Record<string, { title: string; icon: React.ElementType; description: string }> = {
   "/people": { title: "Pessoas", icon: Users, description: "Gerencie seu mailing de contatos. Busque e organize seus leads." },
-  "/companies": { title: "Empresas", icon: Building2, description: "Explore perfis de empresas e sinais de compra." },
-  "/lists": { title: "Listas", icon: ListFilter, description: "Organize seus prospects em listas e segmentações para campanhas." },
-  "/data-enrichment": { title: "Aquecimento de Dados", icon: Database, description: "Aqueça e enriqueça seus dados de contatos e empresas com as APIs da Pluo." },
-  "/signals": { title: "Sinais", icon: Radio, description: "Configure sinais e alertas para identificar empresas que precisam ser prospectadas." },
+  "/companies": { title: "Empresas", icon: Building2, description: "Todas as empresas do seu pipeline. Gerencie perfis, segmentos e dados corporativos." },
+  "/data-enrichment": { title: "Enriquecimento de Dados", icon: Database, description: "Selecione contas e pessoas para enriquecer dados via APIs da Pluo. Encontre e atualize informações de contato." },
+  "/signals": { title: "Sinais", icon: Radio, description: "Seu mercado endereçável completo. Identifique empresas com lançamentos nos próximos meses — sinais de compra para prospecção imediata." },
   "/sequences": { title: "Sequências", icon: Send, description: "Crie cadências multi-persona por conta com ABM via WhatsApp." },
   "/whatsapp": { title: "WhatsApp", icon: MessageSquare, description: "Gerencie suas conversas e campanhas via WhatsApp." },
   "/tasks": { title: "Tarefas", icon: CheckSquare, description: "Acompanhe suas tarefas diárias e follow-ups por conta e contato." },
