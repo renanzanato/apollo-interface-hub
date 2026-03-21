@@ -438,8 +438,19 @@ type ViewMode = "pre-sales" | "sales" | "full-journey";
 
 export default function DealsPage() {
   const [view, setView] = useState<ViewMode>("pre-sales");
+  const [selectedCard, setSelectedCard] = useState<AccountCard | null>(null);
+  const [selectedStage, setSelectedStage] = useState("");
+  const [selectedFunnel, setSelectedFunnel] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const activeFunnel = view === "pre-sales" ? funnels[0] : funnels[1];
+
+  const handleCardClick = (card: AccountCard, stage: string, funnel: string) => {
+    setSelectedCard(card);
+    setSelectedStage(stage);
+    setSelectedFunnel(funnel);
+    setDrawerOpen(true);
+  };
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
@@ -489,10 +500,19 @@ export default function DealsPage() {
 
       {/* Content */}
       {view === "full-journey" ? (
-        <FullJourneyView />
+        <FullJourneyView onCardClick={handleCardClick} />
       ) : (
-        <KanbanBoard funnel={activeFunnel} showTransitions={view === "sales"} />
+        <KanbanBoard funnel={activeFunnel} showTransitions={view === "sales"} onCardClick={handleCardClick} />
       )}
+
+      {/* Account Detail Drawer */}
+      <AccountDetailDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        card={selectedCard}
+        currentStage={selectedStage}
+        currentFunnel={selectedFunnel}
+      />
     </div>
   );
 }
