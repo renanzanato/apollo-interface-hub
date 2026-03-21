@@ -40,7 +40,7 @@ const navGroups: NavGroup[] = [
     items: [
       { title: "Pessoas", url: "/people", icon: MessageSquare },
       { title: "Empresas", url: "/companies", icon: Building2 },
-      { title: "Listas", url: "/lists", icon: ListFilter },
+      
       { title: "Aquecimento de dados", url: "/data-enrichment", icon: Database },
       { title: "Sinais", url: "/signals", icon: Radio },
     ],

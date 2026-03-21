@@ -12,7 +12,7 @@ import DealsPage from "./pages/DealsPage";
 const queryClient = new QueryClient();
 
 const crmRoutes = [
-  "/people", "/companies", "/lists", "/data-enrichment", "/signals",
+  "/people", "/companies", "/data-enrichment", "/signals",
   "/sequences", "/whatsapp", "/tasks",
   "/ai-assistant",
 ];

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AccountDetailDrawer } from "@/components/AccountDetailDrawer";
 
 // ── Types ──
 
@@ -217,13 +218,13 @@ const tempConfig: Record<Temperature, { label: string; icon: React.ElementType; 
 
 // ── Account Card Component ──
 
-function AccountCardComponent({ card, showTransition }: { card: AccountCard; showTransition?: boolean }) {
+function AccountCardComponent({ card, showTransition, onClick }: { card: AccountCard; showTransition?: boolean; onClick?: () => void }) {
   const temp = tempConfig[card.temperature];
   const TempIcon = temp.icon;
   const lastTransition = card.transitions?.[card.transitions.length - 1];
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group">
+    <div onClick={onClick} className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group">
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <p className="text-[10px] text-muted-foreground mb-0.5">{card.segment}</p>
@@ -313,7 +314,7 @@ function FunnelMetrics({ funnel }: { funnel: Funnel }) {
 
 // ── Kanban Board ──
 
-function KanbanBoard({ funnel, showTransitions }: { funnel: Funnel; showTransitions?: boolean }) {
+function KanbanBoard({ funnel, showTransitions, onCardClick }: { funnel: Funnel; showTransitions?: boolean; onCardClick: (card: AccountCard, stage: string, funnel: string) => void }) {
   return (
     <>
       <FunnelMetrics funnel={funnel} />
@@ -345,7 +346,7 @@ function KanbanBoard({ funnel, showTransitions }: { funnel: Funnel; showTransiti
 
               <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2.5">
                 {stage.cards.map((card) => (
-                  <AccountCardComponent key={card.id} card={card} showTransition={showTransitions} />
+                  <AccountCardComponent key={card.id} card={card} showTransition={showTransitions} onClick={() => onCardClick(card, stage.title, funnel.name)} />
                 ))}
                 <button className="w-full py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-lg transition-colors flex items-center justify-center gap-1">
                   <Plus className="h-3 w-3" />
@@ -362,7 +363,7 @@ function KanbanBoard({ funnel, showTransitions }: { funnel: Funnel; showTransiti
 
 // ── Full Journey View ──
 
-function FullJourneyView() {
+function FullJourneyView({ onCardClick }: { onCardClick: (card: AccountCard, stage: string, funnel: string) => void }) {
   return (
     <>
       <div className="flex items-center gap-6 px-6 py-3 border-b border-border bg-secondary/30">
@@ -391,7 +392,7 @@ function FullJourneyView() {
                 </div>
                 <div className="px-2.5 pb-2.5 space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
                   {stage.cards.map((card) => (
-                    <AccountCardComponent key={card.id} card={card} showTransition />
+                    <AccountCardComponent key={card.id} card={card} showTransition onClick={() => onCardClick(card, stage.title, funnels[0].name)} />
                   ))}
                 </div>
               </div>
@@ -421,7 +422,7 @@ function FullJourneyView() {
               </div>
               <div className="px-2.5 pb-2.5 space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
                 {stage.cards.map((card) => (
-                  <AccountCardComponent key={card.id} card={card} showTransition />
+                  <AccountCardComponent key={card.id} card={card} showTransition onClick={() => onCardClick(card, stage.title, funnels[1].name)} />
                 ))}
               </div>
             </div>
@@ -438,8 +439,19 @@ type ViewMode = "pre-sales" | "sales" | "full-journey";
 
 export default function DealsPage() {
   const [view, setView] = useState<ViewMode>("pre-sales");
+  const [selectedCard, setSelectedCard] = useState<AccountCard | null>(null);
+  const [selectedStage, setSelectedStage] = useState("");
+  const [selectedFunnel, setSelectedFunnel] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const activeFunnel = view === "pre-sales" ? funnels[0] : funnels[1];
+
+  const handleCardClick = (card: AccountCard, stage: string, funnel: string) => {
+    setSelectedCard(card);
+    setSelectedStage(stage);
+    setSelectedFunnel(funnel);
+    setDrawerOpen(true);
+  };
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
@@ -489,10 +501,19 @@ export default function DealsPage() {
 
       {/* Content */}
       {view === "full-journey" ? (
-        <FullJourneyView />
+        <FullJourneyView onCardClick={handleCardClick} />
       ) : (
-        <KanbanBoard funnel={activeFunnel} showTransitions={view === "sales"} />
+        <KanbanBoard funnel={activeFunnel} showTransitions={view === "sales"} onCardClick={handleCardClick} />
       )}
+
+      {/* Account Detail Drawer */}
+      <AccountDetailDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        card={selectedCard}
+        currentStage={selectedStage}
+        currentFunnel={selectedFunnel}
+      />
     </div>
   );
 }
