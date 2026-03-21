@@ -217,7 +217,7 @@ const tempConfig: Record<Temperature, { label: string; icon: React.ElementType; 
 
 // ── Account Card Component ──
 
-function AccountCardComponent({ card, showTransition }: { card: AccountCard; showTransition?: boolean }) {
+function AccountCardComponent({ card, showTransition, onClick }: { card: AccountCard; showTransition?: boolean; onClick?: () => void }) {
   const temp = tempConfig[card.temperature];
   const TempIcon = temp.icon;
   const lastTransition = card.transitions?.[card.transitions.length - 1];
