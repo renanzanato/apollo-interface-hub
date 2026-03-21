@@ -223,7 +223,7 @@ function AccountCardComponent({ card, showTransition, onClick }: { card: Account
   const lastTransition = card.transitions?.[card.transitions.length - 1];
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group">
+    <div onClick={onClick} className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group">
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <p className="text-[10px] text-muted-foreground mb-0.5">{card.segment}</p>
