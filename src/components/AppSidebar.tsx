@@ -1,11 +1,11 @@
 import {
-  Home, Bot, Search, Building2, ListFilter, Database,
+  Home, Bot, Search, Building2, Database,
   Send, MessageSquare, CheckSquare,
-  DollarSign, ChevronDown, ChevronRight, Sparkles, Radio
+  DollarSign, ChevronDown, ChevronRight, Sparkles, Radio, Sun, Moon
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -40,7 +41,6 @@ const navGroups: NavGroup[] = [
     items: [
       { title: "Pessoas", url: "/people", icon: MessageSquare },
       { title: "Empresas", url: "/companies", icon: Building2 },
-      
       { title: "Aquecimento de dados", url: "/data-enrichment", icon: Database },
       { title: "Sinais", url: "/signals", icon: Radio },
     ],
@@ -63,8 +63,18 @@ export function AppSidebar() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Prospecção e aquecimento": true,
     "Engajamento": true,
-    "Negócios": true,
   });
+  const [darkMode, setDarkMode] = useState(() => {
+    return document.documentElement.classList.contains("dark");
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
 
   const toggleGroup = (label: string) => {
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -75,10 +85,8 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarContent className="py-2">
-        {/* Logo */}
         <div className="px-4 py-3 flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-primary shrink-0" />
-          {!collapsed && <span className="text-lg font-bold text-foreground">Pipa CRM</span>}
         </div>
 
         {navGroups.map((group) => (
@@ -132,6 +140,16 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
+
+      <SidebarFooter className="p-3 border-t border-border">
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+        >
+          {darkMode ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
+          {!collapsed && <span>{darkMode ? "Modo claro" : "Modo escuro"}</span>}
+        </button>
+      </SidebarFooter>
     </Sidebar>
   );
 }
