@@ -313,7 +313,7 @@ function FunnelMetrics({ funnel }: { funnel: Funnel }) {
 
 // ── Kanban Board ──
 
-function KanbanBoard({ funnel, showTransitions }: { funnel: Funnel; showTransitions?: boolean }) {
+function KanbanBoard({ funnel, showTransitions, onCardClick }: { funnel: Funnel; showTransitions?: boolean; onCardClick: (card: AccountCard, stage: string, funnel: string) => void }) {
   return (
     <>
       <FunnelMetrics funnel={funnel} />
