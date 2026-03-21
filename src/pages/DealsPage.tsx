@@ -345,7 +345,7 @@ function KanbanBoard({ funnel, showTransitions, onCardClick }: { funnel: Funnel;
 
               <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2.5">
                 {stage.cards.map((card) => (
-                  <AccountCardComponent key={card.id} card={card} showTransition={showTransitions} />
+                  <AccountCardComponent key={card.id} card={card} showTransition={showTransitions} onClick={() => onCardClick(card, stage.title, funnel.name)} />
                 ))}
                 <button className="w-full py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-lg transition-colors flex items-center justify-center gap-1">
                   <Plus className="h-3 w-3" />
