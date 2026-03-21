@@ -1,6 +1,6 @@
 import {
   Home, Bot, Search, Building2, ListFilter, Database,
-  Send, MessageSquare, CheckSquare, Handshake,
+  Send, MessageSquare, CheckSquare,
   DollarSign, ChevronDown, ChevronRight, Sparkles, Radio
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
