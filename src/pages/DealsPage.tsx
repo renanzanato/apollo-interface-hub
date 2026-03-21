@@ -362,7 +362,7 @@ function KanbanBoard({ funnel, showTransitions, onCardClick }: { funnel: Funnel;
 
 // ── Full Journey View ──
 
-function FullJourneyView() {
+function FullJourneyView({ onCardClick }: { onCardClick: (card: AccountCard, stage: string, funnel: string) => void }) {
   return (
     <>
       <div className="flex items-center gap-6 px-6 py-3 border-b border-border bg-secondary/30">
