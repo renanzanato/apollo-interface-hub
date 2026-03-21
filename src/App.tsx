@@ -7,13 +7,14 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { CRMLayout } from "@/components/CRMLayout";
 import CRMPage from "./pages/CRMPage";
+import DealsPage from "./pages/DealsPage";
 
 const queryClient = new QueryClient();
 
 const crmRoutes = [
   "/people", "/companies", "/lists", "/data-enrichment", "/signals",
   "/sequences", "/whatsapp", "/tasks",
-  "/deals", "/ai-assistant",
+  "/ai-assistant",
 ];
 
 const App = () => (
@@ -24,6 +25,14 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route
+            path="/deals"
+            element={
+              <CRMLayout>
+                <DealsPage />
+              </CRMLayout>
+            }
+          />
           {crmRoutes.map((path) => (
             <Route
               key={path}
