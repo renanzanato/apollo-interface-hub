@@ -1,11 +1,12 @@
 import {
   Home, Bot, Search, Building2, Database,
   Send, MessageSquare, CheckSquare,
-  DollarSign, ChevronDown, ChevronRight, Sparkles, Radio, Sun, Moon
+  DollarSign, ChevronDown, ChevronRight, Sparkles, Radio, Sun, Moon, Users, Zap, Target,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { PipaAIButton } from "@/components/PipaAIPanel";
 import {
   Sidebar,
   SidebarContent,
@@ -33,13 +34,14 @@ const navGroups: NavGroup[] = [
       { title: "Home", url: "/", icon: Home },
       { title: "AI Assistentes", url: "/ai-assistant", icon: Bot, badge: "New" },
       { title: "Deals", url: "/deals", icon: DollarSign },
+      { title: "Metas", url: "/metas", icon: Target },
     ],
   },
   {
     label: "Prospecção e aquecimento",
     icon: Search,
     items: [
-      { title: "Pessoas", url: "/people", icon: MessageSquare },
+      { title: "Pessoas", url: "/people", icon: Users },
       { title: "Empresas", url: "/companies", icon: Building2 },
       { title: "Aquecimento de dados", url: "/data-enrichment", icon: Database },
       { title: "Sinais", url: "/signals", icon: Radio },
@@ -54,6 +56,14 @@ const navGroups: NavGroup[] = [
       { title: "Tarefas", url: "/tasks", icon: CheckSquare },
     ],
   },
+  {
+    label: "Growth",
+    icon: Zap,
+    items: [
+      { title: "Growth Lab", url: "/growth-lab", icon: Zap, badge: "New" },
+      { title: "Agentes de IA", url: "/agents", icon: Bot },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -63,6 +73,7 @@ export function AppSidebar() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Prospecção e aquecimento": true,
     "Engajamento": true,
+    "Growth": true,
   });
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains("dark");
@@ -141,10 +152,12 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-border">
+      <SidebarFooter className="p-2 border-t border-border space-y-0.5">
+        {!collapsed && <PipaAIButton />}
+
         <button
           onClick={() => setDarkMode(!darkMode)}
-          className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          className="flex items-center gap-3 w-full px-2 py-[6px] text-sm rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
         >
           {darkMode ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
           {!collapsed && <span>{darkMode ? "Modo claro" : "Modo escuro"}</span>}
