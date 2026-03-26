@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Users, Plus, Search, Pencil, Trash2, X, ChevronDown, Phone, Mail, Building2,
-  Download, Upload,
+  Download, Upload, Sparkles, Linkedin,
 } from "lucide-react";
 import { PersonDB, CompanyDB, CityDB } from "@/lib/db";
 import type { Person, Company, City } from "@/types";
 import { toast } from "sonner";
 import { downloadCSV, parseCSV } from "@/lib/csv";
+import { apolloEnrichPerson, perplexityResearch } from "@/lib/integrations";
 
 const STATUS_LABELS: Record<Person["status"], string> = {
   active: "Ativo",
@@ -18,6 +19,7 @@ const emptyForm = (): Omit<Person, "id" | "createdAt" | "updatedAt"> => ({
   email: "",
   phone: "",
   role: "",
+  linkedin: "",
   companyId: "",
   companyName: "",
   city: "",
@@ -40,6 +42,10 @@ export default function PeoplePage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [importPreview, setImportPreview] = useState<Record<string, string>[] | null>(null);
   const [importing, setImporting] = useState(false);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichConflicts, setEnrichConflicts] = useState<{ key: string; label: string; current: string; incoming: string; accept: boolean }[]>([]);
+  const [researching, setResearching] = useState(false);
+  const [researchResult, setResearchResult] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function reload() {
@@ -84,6 +90,8 @@ export default function PeoplePage() {
   function closeForm() {
     setShowForm(false);
     setEditing(null);
+    setEnrichConflicts([]);
+    setResearchResult("");
   }
 
   function handleCompanyChange(companyId: string) {
@@ -106,10 +114,105 @@ export default function PeoplePage() {
     setForm((f) => ({ ...f, tags: f.tags.filter((t) => t !== tag) }));
   }
 
+  async function handleEnrich() {
+    if (!form.email && !form.name) {
+      toast.error("Preencha ao menos o nome ou e-mail para enriquecer.");
+      return;
+    }
+    setEnriching(true);
+    setEnrichConflicts([]);
+    try {
+      const result = await apolloEnrichPerson({
+        email: form.email || undefined,
+        name: form.name || undefined,
+        organizationName: form.companyName || undefined,
+        linkedinUrl: form.linkedin || undefined,
+      });
+      if (result.error) { toast.error(result.error); return; }
+
+      // Se veio mais de 1 e-mail ou telefone, gera candidatos extras para o usuário escolher
+      const phoneCandidates = result.phones?.length ? result.phones : (result.phone ? [result.phone] : []);
+      const emailCandidates = result.emails?.length ? result.emails : (result.email ? [result.email] : []);
+
+      const candidates: { key: string; label: string; current: string; incoming: string }[] = [
+        { key: "name",        label: "Nome",     current: form.name,          incoming: result.name         ?? "" },
+        { key: "email",       label: "E-mail",   current: form.email,         incoming: emailCandidates[0]  ?? "" },
+        { key: "phone",       label: "Telefone", current: form.phone,         incoming: phoneCandidates[0]  ?? "" },
+        { key: "role",        label: "Cargo",    current: form.role,          incoming: result.title        ?? "" },
+        { key: "linkedin",    label: "LinkedIn", current: form.linkedin ?? "", incoming: result.linkedin_url ?? "" },
+        { key: "companyName", label: "Empresa",  current: form.companyName ?? "", incoming: result.organization?.name ?? "" },
+        // Emails adicionais como candidatos extras
+        ...emailCandidates.slice(1).map((e, i) => ({
+          key: `email_extra_${i}`, label: `E-mail extra ${i + 2}`, current: "", incoming: e,
+        })),
+        // Telefones adicionais como candidatos extras
+        ...phoneCandidates.slice(1).map((p, i) => ({
+          key: `phone_extra_${i}`, label: `Telefone extra ${i + 2}`, current: "", incoming: p,
+        })),
+      ];
+
+      const autoFill: Record<string, string> = {};
+      const conflicts: typeof enrichConflicts = [];
+
+      for (const c of candidates) {
+        if (!c.incoming) continue;
+        if (!c.current) {
+          autoFill[c.key] = c.incoming;
+        } else if (c.current !== c.incoming) {
+          conflicts.push({ ...c, accept: false });
+        }
+      }
+
+      if (Object.keys(autoFill).length > 0) {
+        setForm((f) => ({ ...f, ...autoFill }));
+      }
+
+      if (conflicts.length > 0) {
+        setEnrichConflicts(conflicts);
+        toast.info(`${conflicts.length} campo(s) já preenchidos têm dados diferentes. Revise abaixo.`);
+      } else {
+        toast.success("Dados enriquecidos com sucesso!");
+      }
+    } catch {
+      toast.error("Erro ao enriquecer dados.");
+    } finally {
+      setEnriching(false);
+    }
+  }
+
+  function applyConflicts() {
+    const patch: Record<string, string> = {};
+    for (const c of enrichConflicts) {
+      if (c.accept) patch[c.key] = c.incoming;
+    }
+    setForm((f) => ({ ...f, ...patch }));
+    setEnrichConflicts([]);
+    toast.success("Dados aplicados.");
+  }
+
+  async function handleResearch() {
+    if (!form.name) { toast.error("Preencha o nome para pesquisar."); return; }
+    setResearching(true);
+    setResearchResult("");
+    try {
+      const result = await perplexityResearch({
+        name: form.name,
+        company: form.companyName || undefined,
+        role: form.role || undefined,
+        linkedin: form.linkedin || undefined,
+      });
+      if (result.error) { toast.error(result.error); return; }
+      setResearchResult(result.content);
+    } catch {
+      toast.error("Erro ao pesquisar.");
+    } finally {
+      setResearching(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) { toast.error("Nome é obrigatório."); return; }
-    if (!form.email.trim()) { toast.error("E-mail é obrigatório."); return; }
 
     try {
       if (editing) {
@@ -393,6 +496,75 @@ export default function PeoplePage() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+              {/* Botões de enriquecimento */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleEnrich}
+                  disabled={enriching}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-primary/10 text-primary border border-primary/30 rounded-md hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {enriching ? "Enriquecendo..." : "Enriquecer dados"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResearch}
+                  disabled={researching}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-violet-500/10 text-violet-600 border border-violet-500/30 rounded-md hover:bg-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Search className="h-4 w-4" />
+                  {researching ? "Pesquisando..." : "Pesquisar contexto"}
+                </button>
+              </div>
+
+              {/* Conflitos de enriquecimento */}
+              {enrichConflicts.length > 0 && (
+                <div className="border border-amber-400/40 bg-amber-50 dark:bg-amber-950/20 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                    Campos já preenchidos — selecione quais deseja substituir:
+                  </p>
+                  {enrichConflicts.map((c, i) => (
+                    <label key={c.key} className="flex items-start gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={c.accept}
+                        onChange={(e) => setEnrichConflicts((prev) =>
+                          prev.map((item, idx) => idx === i ? { ...item, accept: e.target.checked } : item)
+                        )}
+                        className="mt-0.5 accent-primary"
+                      />
+                      <div className="flex-1 min-w-0 text-xs">
+                        <span className="font-medium text-foreground">{c.label}: </span>
+                        <span className="line-through text-muted-foreground truncate">{c.current}</span>
+                        <span className="text-muted-foreground mx-1">→</span>
+                        <span className="text-primary font-medium truncate">{c.incoming}</span>
+                      </div>
+                    </label>
+                  ))}
+                  <div className="flex gap-2 pt-1">
+                    <button type="button" onClick={applyConflicts} className="text-xs px-3 py-1 bg-primary text-primary-foreground rounded-md hover:opacity-90">
+                      Aplicar selecionados
+                    </button>
+                    <button type="button" onClick={() => setEnrichConflicts([])} className="text-xs px-3 py-1 border border-input rounded-md hover:bg-muted">
+                      Descartar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Resultado Perplexity */}
+              {researchResult && (
+                <div className="border border-violet-400/30 bg-violet-50 dark:bg-violet-950/20 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-medium text-violet-700 dark:text-violet-400">Contexto (Perplexity)</p>
+                    <button type="button" onClick={() => setResearchResult("")} className="text-muted-foreground hover:text-foreground">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">{researchResult}</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -436,6 +608,19 @@ export default function PeoplePage() {
                     onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
                     className="w-full border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="ex: Diretor Comercial"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                    <Linkedin className="h-3.5 w-3.5 text-[#0A66C2]" />
+                    LinkedIn
+                  </label>
+                  <input
+                    type="url"
+                    value={form.linkedin ?? ""}
+                    onChange={(e) => setForm((f) => ({ ...f, linkedin: e.target.value }))}
+                    className="w-full border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="https://linkedin.com/in/nome"
                   />
                 </div>
                 <div>

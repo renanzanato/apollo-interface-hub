@@ -7,9 +7,13 @@ import { toast } from "sonner";
 
 export default function SettingsPage() {
   const [apolloKey, setApolloKey]     = useState("");
-  const [openaiKey, setOpenaiKey]     = useState("");
-  const [openaiModel, setOpenaiModel] = useState("gpt-4o");
-  const [ngrokUrl, setNgrokUrl]       = useState("");
+  const [apolloKey2, setApolloKey2]   = useState("");
+  const [apolloKey3, setApolloKey3]   = useState("");
+  const [openaiKey, setOpenaiKey]         = useState("");
+  const [openaiModel, setOpenaiModel]     = useState("gpt-4o");
+  const [ngrokUrl, setNgrokUrl]           = useState("");
+  const [perplexityKey, setPerplexityKey] = useState("");
+  const [showPerplexity, setShowPerplexity] = useState(false);
   const [showApollo, setShowApollo]   = useState(false);
   const [showOpenai, setShowOpenai]   = useState(false);
   const [cities, setCities]           = useState<City[]>([]);
@@ -17,14 +21,17 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setApolloKey(IntegrationSettings.apolloKey);
+    setApolloKey2(IntegrationSettings.apolloKey2);
+    setApolloKey3(IntegrationSettings.apolloKey3);
     setOpenaiKey(IntegrationSettings.openaiKey);
     setOpenaiModel(IntegrationSettings.openaiModel);
     setNgrokUrl(IntegrationSettings.ngrokUrl);
+    setPerplexityKey(IntegrationSettings.perplexityKey);
     setCities(CityStore.getAll());
   }, []);
 
   function saveIntegrations() {
-    IntegrationSettings.save({ apolloKey, openaiKey, openaiModel, ngrokUrl });
+    IntegrationSettings.save({ apolloKey, apolloKey2, apolloKey3, openaiKey, openaiModel, ngrokUrl, perplexityKey });
     toast.success("Configurações salvas.");
   }
 
@@ -120,17 +127,40 @@ export default function SettingsPage() {
                 </button>
               </div>
               <div className="space-y-2">
-                <div className="relative">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Conta 1</label>
+                  <div className="relative">
+                    <input
+                      type={showApollo ? "text" : "password"}
+                      value={apolloKey}
+                      onChange={(e) => setApolloKey(e.target.value)}
+                      placeholder="apollo_api_key_xxxxxxxxxxxxxxxx"
+                      className="w-full border border-input bg-background rounded-md px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                    <button type="button" onClick={() => setShowApollo((v) => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      {showApollo ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Conta 2 (fallback automático)</label>
                   <input
                     type={showApollo ? "text" : "password"}
-                    value={apolloKey}
-                    onChange={(e) => setApolloKey(e.target.value)}
+                    value={apolloKey2}
+                    onChange={(e) => setApolloKey2(e.target.value)}
                     placeholder="apollo_api_key_xxxxxxxxxxxxxxxx"
-                    className="w-full border border-input bg-background rounded-md px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
-                  <button type="button" onClick={() => setShowApollo((v) => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    {showApollo ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  </button>
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Conta 3 (fallback automático)</label>
+                  <input
+                    type={showApollo ? "text" : "password"}
+                    value={apolloKey3}
+                    onChange={(e) => setApolloKey3(e.target.value)}
+                    placeholder="apollo_api_key_xxxxxxxxxxxxxxxx"
+                    className="w-full border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Ngrok URL (para mobile numbers via proxy)</label>
@@ -193,6 +223,36 @@ export default function SettingsPage() {
                     <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            {/* Perplexity */}
+            <div className="pb-5 border-b border-border">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="font-medium text-foreground flex items-center gap-2">
+                    Perplexity
+                    {perplexityKey && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Pesquisa contextual com busca web em tempo real — histórico, empresa, cargo e notícias.
+                    {" "}<a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-0.5">
+                      Obter key <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  </p>
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPerplexity ? "text" : "password"}
+                  value={perplexityKey}
+                  onChange={(e) => setPerplexityKey(e.target.value)}
+                  placeholder="pplx-xxxxxxxxxxxxxxxxxxxxxxxx"
+                  className="w-full border border-input bg-background rounded-md px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <button type="button" onClick={() => setShowPerplexity((v) => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {showPerplexity ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
               </div>
             </div>
 

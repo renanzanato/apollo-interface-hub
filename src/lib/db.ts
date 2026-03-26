@@ -106,6 +106,7 @@ export const PersonDB = {
 function fromPerson(d: Partial<Person>) {
   return {
     name: d.name, email: d.email, phone: d.phone, role: d.role,
+    linkedin: d.linkedin || null,
     company_id: d.companyId || null,
     company_name: d.companyName,
     city: d.city, state: d.state, tags: d.tags, status: d.status,
@@ -118,6 +119,7 @@ function toPerson(r: Record<string, unknown>): Person {
     email: r.email as string,
     phone: r.phone as string,
     role: r.role as string,
+    linkedin: (r.linkedin as string) || undefined,
     companyId: r.company_id as string,
     companyName: r.company_name as string,
     city: r.city as string,

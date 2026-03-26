@@ -59,9 +59,9 @@ const weekOfMonth = (d: Date) => Math.ceil(d.getDate()/7);
 
 // ── Default values ────────────────────────────────────────────
 const DEFAULT_CONFIG = {
-  startDate:"2026-03-23", endDate:"2026-04-23",
-  revenueGoal:50000, avgTicket:5000,
-  rateReunToSale:30, rateProspToReun:15, targetCompanies:200,
+  startDate:"", endDate:"",
+  revenueGoal:0, avgTicket:0,
+  rateReunToSale:0, rateProspToReun:0, targetCompanies:0,
 };
 const DEFAULT_STAGES: Omit<ConversionStageRow,"id"|"createdAt">[] = [
   { name:"Contato inicial",        currentRate:0, targetRate:80, avgDays:1, sortOrder:0 },

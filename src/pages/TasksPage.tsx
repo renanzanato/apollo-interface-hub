@@ -49,6 +49,34 @@ export default function TasksPage() {
     setTasks(t);
     setPeople(p);
     setCompanies(c);
+    checkNotifications(t);
+  }
+
+  const notifiedIds = useState(() => new Set<string>())[0];
+
+  function checkNotifications(taskList: Task[]) {
+    if (!("Notification" in window)) return;
+    const today = new Date().toISOString().split("T")[0];
+    const overdue = taskList.filter(
+      (t) => t.status !== "done" && t.dueDate && t.dueDate <= today && !notifiedIds.has(t.id)
+    );
+    if (overdue.length === 0) return;
+
+    const fire = () => {
+      overdue.forEach((t) => {
+        notifiedIds.add(t.id);
+        new Notification("Tarefa pendente", {
+          body: `${t.title}${t.dueDate === today ? " — vence hoje" : " — vencida"}`,
+          icon: "/favicon.ico",
+        });
+      });
+    };
+
+    if (Notification.permission === "granted") {
+      fire();
+    } else if (Notification.permission === "default") {
+      Notification.requestPermission().then((perm) => { if (perm === "granted") fire(); });
+    }
   }
 
   useEffect(() => { reload(); }, []);

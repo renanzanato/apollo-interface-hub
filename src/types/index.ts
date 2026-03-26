@@ -24,6 +24,7 @@ export interface Person {
   email: string;
   phone: string;
   role: string;
+  linkedin?: string;
   companyId?: string;
   companyName?: string;
   city?: string;
@@ -70,9 +71,11 @@ export interface Task {
 export interface SequenceStep {
   id: string;
   order: number;
-  type: "whatsapp" | "email" | "call" | "task";
+  type: "whatsapp" | "email" | "call" | "task" | "linkedin";
   content: string;
-  delayDays: number;
+  delayDays: number; // absolute day number (Dia 1, Dia 3, etc.)
+  personId?: string;
+  personName?: string;
 }
 
 export interface Sequence {
@@ -80,6 +83,7 @@ export interface Sequence {
   name: string;
   description?: string;
   active: boolean;
+  playType?: string;
   steps: SequenceStep[];
   contactIds: string[];
   companyIds: string[];
@@ -117,6 +121,51 @@ export interface FunnelStage {
   order: number;
 }
 
+export interface DealHistoryEntry {
+  id: string;
+  type: "created" | "stage_moved" | "note";
+  description: string;
+  date: string;
+}
+
+export interface DealTask {
+  id: string;
+  title: string;
+  status: "pending" | "done";
+  dueDate?: string;
+  createdAt: string;
+}
+
+export interface DealProduct {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: string;
+}
+
+export interface DealFile {
+  id: string;
+  name: string;
+  url?: string;
+  uploadedAt: string;
+}
+
+export interface DealProposal {
+  id: string;
+  title: string;
+  value: string;
+  status: "draft" | "sent" | "accepted" | "rejected";
+  createdAt: string;
+}
+
+export interface DealEmail {
+  id: string;
+  subject: string;
+  body: string;
+  direction: "in" | "out";
+  sentAt: string;
+}
+
 export interface FunnelCard {
   id: string;
   companyId?: string;
@@ -126,6 +175,22 @@ export interface FunnelCard {
   stageId: string;
   funnelId: string;
   createdAt: string;
+  // Extended deal fields
+  title?: string;
+  qualification?: string;
+  totalValue?: string;
+  forecastDate?: string;
+  campaign?: string;
+  source?: string;
+  contactIds?: string[];
+  responsibleId?: string;
+  responsibleName?: string;
+  history?: DealHistoryEntry[];
+  dealTasks?: DealTask[];
+  products?: DealProduct[];
+  files?: DealFile[];
+  proposals?: DealProposal[];
+  emails?: DealEmail[];
 }
 
 export interface Funnel {

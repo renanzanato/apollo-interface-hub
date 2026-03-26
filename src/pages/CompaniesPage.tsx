@@ -168,9 +168,9 @@ export default function CompaniesPage() {
     setImporting(true);
     let ok = 0; let fail = 0;
     for (const row of importPreview) {
-      const name = row["nome"] || row["name"] || row["empresa"] || row["company"] || row["company name"] || "";
+      const name = row["nome"] || row["nome_empresa"] || row["name"] || row["empresa"] || row["company"] || row["company name"] || "";
       if (!name) { fail++; continue; }
-      const temp = (row["temperatura"] || row["temperature"] || "cold") as Company["temperature"];
+      const temp = (row["temperatura"] || row["temperature"] || row["status_termico"] || "cold") as Company["temperature"];
       const status = (row["status"] || "prospect") as Company["status"];
       try {
         await CompanyDB.save({
@@ -180,7 +180,7 @@ export default function CompaniesPage() {
           website:       row["website"] || row["site"] || "",
           city:          row["cidade"] || row["city"] || "",
           state:         row["estado"] || row["state"] || "",
-          employees:     row["funcionarios"] || row["employees"] ? Number(row["funcionarios"] || row["employees"]) : undefined,
+          employees:     row["funcionarios"] || row["numero_funcionarios"] || row["employees"] ? Number(row["funcionarios"] || row["numero_funcionarios"] || row["employees"]) : undefined,
           annualRevenue: row["receita_anual"] || row["annual_revenue"] || row["revenue"] || "",
           temperature:   ["hot","warm","cold"].includes(temp) ? temp : "cold",
           status:        ["active","inactive","prospect"].includes(status) ? status : "prospect",

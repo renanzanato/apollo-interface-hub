@@ -3,10 +3,11 @@ import {
   Plus, Flame, Sun, Snowflake, DollarSign,
   Pencil, Trash2, X, Settings, Zap, ToggleLeft, ToggleRight, ArrowRight, Sparkles, Loader2,
 } from "lucide-react";
-import { FunnelDB, CompanyDB, FunnelTransitionDB } from "@/lib/db";
-import type { Funnel, FunnelCard, FunnelStage, Company, FunnelTransition } from "@/types";
+import { FunnelDB, CompanyDB, FunnelTransitionDB, PersonDB } from "@/lib/db";
+import type { Funnel, FunnelCard, FunnelStage, Company, FunnelTransition, Person, DealHistoryEntry } from "@/types";
 import { toast } from "sonner";
 import { openaiChat, IntegrationSettings } from "@/lib/integrations";
+import DealDetailDrawer from "@/components/DealDetailDrawer";
 
 const TEMP_CONFIG = {
   hot:  { label: "Hot",  icon: Flame,     cls: "bg-red-500/15 text-red-500" },
@@ -33,6 +34,7 @@ function CardForm({
   funnel: Funnel; stageId: string; card: FunnelCard | null;
   companies: Company[]; onSave: (data: Partial<FunnelCard>) => void; onClose: () => void;
 }) {
+  const [title, setTitle]               = useState(card?.title ?? "");
   const [companyId, setCompanyId]       = useState(card?.companyId ?? "");
   const [companyName, setCompanyName]   = useState(card?.companyName ?? "");
   const [temperature, setTemperature]   = useState<FunnelCard["temperature"]>(card?.temperature ?? "cold");
@@ -49,7 +51,7 @@ function CardForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!companyName.trim()) { toast.error("Nome da empresa obrigatório."); return; }
-    onSave({ companyId, companyName, temperature, revenue, stageId: selectedStageId });
+    onSave({ title: title.trim() || undefined, companyId, companyName, temperature, revenue, stageId: selectedStageId });
   }
 
   return (
@@ -60,6 +62,15 @@ function CardForm({
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
         </div>
         <form onSubmit={submit} className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Nome da negociação</label>
+            <input
+              type="text" value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full border border-input bg-background rounded-md px-3 py-2 text-sm focus:outline-none"
+              placeholder="ex: Proposta Empresa XYZ"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Empresa</label>
             {companies.length > 0 && (
@@ -455,6 +466,7 @@ function AutomationsModal({
 export default function DealsPage() {
   const [funnels, setFunnels]         = useState<Funnel[]>([]);
   const [companies, setCompanies]     = useState<Company[]>([]);
+  const [people, setPeople]           = useState<Person[]>([]);
   const [transitions, setTransitions] = useState<FunnelTransition[]>([]);
   const [activeFunnelId, setActiveFunnelId] = useState<string | null>(null);
   const [showCardForm, setShowCardForm]     = useState<{ stageId: string; card: FunnelCard | null } | null>(null);
@@ -462,12 +474,14 @@ export default function DealsPage() {
   const [showAutomations, setShowAutomations] = useState(false);
   const [deleteCardId, setDeleteCardId]     = useState<string | null>(null);
   const [deleteFunnelId, setDeleteFunnelId] = useState<string | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   async function reload() {
-    const [all, c, tr] = await Promise.all([FunnelDB.getAll(), CompanyDB.getAll(), FunnelTransitionDB.getAll()]);
+    const [all, c, tr, ppl] = await Promise.all([FunnelDB.getAll(), CompanyDB.getAll(), FunnelTransitionDB.getAll(), PersonDB.getAll()]);
     setFunnels(all);
     setCompanies(c);
     setTransitions(tr);
+    setPeople(ppl);
     if (all.length > 0 && !activeFunnelId) setActiveFunnelId(all[0].id);
   }
 
@@ -481,18 +495,29 @@ export default function DealsPage() {
     const editing = showCardForm?.card;
     const updatedCards = editing
       ? activeFunnel.cards.map((c) => c.id === editing.id ? { ...c, ...data } : c)
-      : [
-          ...activeFunnel.cards,
-          {
-            id: uid(), funnelId: activeFunnel.id,
-            companyId: data.companyId ?? "",
-            companyName: data.companyName ?? "",
-            temperature: data.temperature ?? "cold",
-            revenue: data.revenue ?? "",
-            stageId: data.stageId ?? activeFunnel.stages[0]?.id ?? "",
-            createdAt: now(),
-          } as FunnelCard,
-        ];
+      : (() => {
+          const newStageId = data.stageId ?? activeFunnel.stages[0]?.id ?? "";
+          const stageName = activeFunnel.stages.find((s) => s.id === newStageId)?.title ?? "";
+          const initHistory: DealHistoryEntry[] = [{
+            id: uid(), type: "created",
+            description: `Negociação criada na etapa "${stageName}"`,
+            date: now(),
+          }];
+          return [
+            ...activeFunnel.cards,
+            {
+              id: uid(), funnelId: activeFunnel.id,
+              title: data.title ?? "",
+              companyId: data.companyId ?? "",
+              companyName: data.companyName ?? "",
+              temperature: data.temperature ?? "cold",
+              revenue: data.revenue ?? "",
+              stageId: newStageId,
+              createdAt: now(),
+              history: initHistory,
+            } as FunnelCard,
+          ];
+        })();
     try {
       await FunnelDB.update(activeFunnel.id, { cards: updatedCards });
       setShowCardForm(null);
@@ -515,10 +540,34 @@ export default function DealsPage() {
     }
   }
 
+  async function updateCard(updated: FunnelCard) {
+    if (!activeFunnel) return;
+    try {
+      await FunnelDB.update(activeFunnel.id, {
+        cards: activeFunnel.cards.map((c) => c.id === updated.id ? updated : c),
+      });
+      reload();
+    } catch {
+      toast.error("Erro ao atualizar negociação.");
+    }
+  }
+
   async function moveCard(cardId: string, toStageId: string) {
     if (!activeFunnel) return;
     try {
-      const movedCards = activeFunnel.cards.map((c) => c.id === cardId ? { ...c, stageId: toStageId } : c);
+      const movingCard = activeFunnel.cards.find((c) => c.id === cardId);
+      const fromStage  = activeFunnel.stages.find((s) => s.id === movingCard?.stageId);
+      const toStageObj = activeFunnel.stages.find((s) => s.id === toStageId);
+      const historyEntry: DealHistoryEntry = {
+        id: uid(), type: "stage_moved",
+        description: `Movido de "${fromStage?.title ?? "—"}" para "${toStageObj?.title ?? "—"}"`,
+        date: now(),
+      };
+      const movedCards = activeFunnel.cards.map((c) =>
+        c.id === cardId
+          ? { ...c, stageId: toStageId, history: [...(c.history ?? []), historyEntry] }
+          : c
+      );
       await FunnelDB.update(activeFunnel.id, { cards: movedCards });
 
       // ── Verificar automações ──────────────────────────────
@@ -545,6 +594,31 @@ export default function DealsPage() {
       reload();
     } catch {
       toast.error("Erro ao mover card.");
+    }
+  }
+
+  async function moveCardToFunnel(cardId: string, targetFunnelId: string, targetStageId: string) {
+    if (!activeFunnel) return;
+    try {
+      const card = activeFunnel.cards.find((c) => c.id === cardId);
+      const targetFunnel = funnels.find((f) => f.id === targetFunnelId);
+      if (!card || !targetFunnel) return;
+      const fromFunnelName = activeFunnel.name;
+      const toFunnelName   = targetFunnel.name;
+      const toStageName    = targetFunnel.stages.find((s) => s.id === targetStageId)?.title ?? "—";
+      const histEntry: DealHistoryEntry = {
+        id: uid(), type: "stage_moved",
+        description: `Movido do funil "${fromFunnelName}" para "${toFunnelName}" → ${toStageName}`,
+        date: now(),
+      };
+      const updatedCard = { ...card, stageId: targetStageId, funnelId: targetFunnelId, history: [...(card.history ?? []), histEntry] };
+      await FunnelDB.update(activeFunnel.id, { cards: activeFunnel.cards.filter((c) => c.id !== cardId) });
+      await FunnelDB.update(targetFunnelId, { cards: [...targetFunnel.cards, updatedCard] });
+      setSelectedCardId(null);
+      reload();
+      toast.success(`Card movido para "${toFunnelName}".`);
+    } catch {
+      toast.error("Erro ao mover card de funil.");
     }
   }
 
@@ -701,14 +775,23 @@ export default function DealsPage() {
                         const temp = TEMP_CONFIG[card.temperature];
                         const TempIcon = temp.icon;
                         return (
-                          <div key={card.id} className="bg-card border border-border rounded-lg p-3 hover:shadow-sm transition-shadow">
+                          <div
+                            key={card.id}
+                            className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => setSelectedCardId(card.id)}
+                          >
                             <div className="flex items-start justify-between gap-1 mb-2">
-                              <span className="font-medium text-sm text-foreground leading-tight">{card.companyName}</span>
+                              <div className="min-w-0">
+                                <span className="font-medium text-sm text-foreground leading-tight block truncate">
+                                  {card.title || card.companyName}
+                                </span>
+                                {card.title && <span className="text-xs text-muted-foreground truncate block">{card.companyName}</span>}
+                              </div>
                               <div className="flex items-center gap-0.5 shrink-0">
-                                <button onClick={() => setShowCardForm({ stageId: stage.id, card })} className="p-1 text-muted-foreground hover:text-foreground">
+                                <button onClick={(e) => { e.stopPropagation(); setShowCardForm({ stageId: stage.id, card }); }} className="p-1 text-muted-foreground hover:text-foreground">
                                   <Pencil className="h-3 w-3" />
                                 </button>
-                                <button onClick={() => setDeleteCardId(card.id)} className="p-1 text-muted-foreground hover:text-destructive">
+                                <button onClick={(e) => { e.stopPropagation(); setDeleteCardId(card.id); }} className="p-1 text-muted-foreground hover:text-destructive">
                                   <Trash2 className="h-3 w-3" />
                                 </button>
                               </div>
@@ -719,17 +802,31 @@ export default function DealsPage() {
                               </span>
                               {card.revenue && <span className="text-xs text-muted-foreground">{card.revenue}</span>}
                             </div>
-                            {activeFunnel.stages.length > 1 && (
-                              <div className="mt-2 pt-2 border-t border-border">
-                                <select
-                                  value={card.stageId}
-                                  onChange={(e) => moveCard(card.id, e.target.value)}
-                                  className="w-full text-xs border border-input bg-background rounded px-1.5 py-1 focus:outline-none"
-                                >
-                                  {activeFunnel.stages.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-                                </select>
-                              </div>
-                            )}
+                            {activeFunnel.stages.length > 1 && (() => {
+                              const stageIdx = activeFunnel.stages.findIndex((s) => s.id === card.stageId);
+                              const prevStage = stageIdx > 0 ? activeFunnel.stages[stageIdx - 1] : null;
+                              const nextStage = stageIdx < activeFunnel.stages.length - 1 ? activeFunnel.stages[stageIdx + 1] : null;
+                              return (
+                                <div className="mt-2 pt-2 border-t border-border flex items-center justify-between gap-1" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    disabled={!prevStage}
+                                    onClick={() => prevStage && moveCard(card.id, prevStage.id)}
+                                    title={prevStage ? `← ${prevStage.title}` : ""}
+                                    className="flex-1 text-xs px-2 py-1 rounded border border-input bg-background hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed truncate"
+                                  >
+                                    {prevStage ? `← ${prevStage.title}` : "←"}
+                                  </button>
+                                  <button
+                                    disabled={!nextStage}
+                                    onClick={() => nextStage && moveCard(card.id, nextStage.id)}
+                                    title={nextStage ? `${nextStage.title} →` : ""}
+                                    className="flex-1 text-xs px-2 py-1 rounded border border-input bg-background hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed truncate"
+                                  >
+                                    {nextStage ? `${nextStage.title} →` : "→"}
+                                  </button>
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })}
@@ -773,6 +870,20 @@ export default function DealsPage() {
           onClose={() => setShowAutomations(false)}
         />
       )}
+      {selectedCardId && activeFunnel && (() => {
+        const selCard = activeFunnel.cards.find((c) => c.id === selectedCardId);
+        return selCard ? (
+          <DealDetailDrawer
+            card={selCard}
+            funnel={activeFunnel}
+            funnels={funnels}
+            people={people}
+            onClose={() => setSelectedCardId(null)}
+            onUpdate={updateCard}
+            onMoveToFunnel={moveCardToFunnel}
+          />
+        ) : null;
+      })()}
       {deleteCardId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
           <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm shadow-xl">

@@ -7,6 +7,7 @@ import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { PipaAIButton } from "@/components/PipaAIPanel";
+import { TaskDB } from "@/lib/db";
 import {
   Sidebar,
   SidebarContent,
@@ -78,6 +79,15 @@ export function AppSidebar() {
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains("dark");
   });
+  const [overdueCount, setOverdueCount] = useState(0);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    TaskDB.getAll().then((tasks) => {
+      const count = tasks.filter((t) => t.status !== "done" && t.dueDate && t.dueDate <= today).length;
+      setOverdueCount(count);
+    });
+  }, []);
 
   useEffect(() => {
     if (darkMode) {
@@ -139,6 +149,11 @@ export function AppSidebar() {
                           {!collapsed && item.badge && (
                             <span className="text-[10px] font-semibold bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
                               {item.badge}
+                            </span>
+                          )}
+                          {!collapsed && item.url === "/tasks" && overdueCount > 0 && (
+                            <span className="text-[10px] font-semibold bg-red-500 text-white px-1.5 py-0.5 rounded-full">
+                              {overdueCount}
                             </span>
                           )}
                         </NavLink>

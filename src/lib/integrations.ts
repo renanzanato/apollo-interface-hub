@@ -3,46 +3,78 @@
 //  Apollo.io · OpenAI · WASELLER (WhatsApp Web)
 // ────────────────────────────────────────────────────────────
 
+// ─── Defaults (pré-configurados) ─────────────────────────────
+const DEFAULTS = {
+  apolloKey:   "",
+  apolloKey2:  "",
+  apolloKey3:  "",
+  openaiKey:   "",
+  ngrokUrl:    "",
+};
+
 const KEYS = {
-  apolloKey:    "int_apollo_key",
-  openaiKey:    "int_openai_key",
-  openaiModel:  "int_openai_model",
-  ngrokUrl:     "int_ngrok_url",
-  geminiKey:    "int_gemini_key",
-  geminiModel:  "int_gemini_model",
+  apolloKey:      "int_apollo_key",
+  apolloKey2:     "int_apollo_key2",
+  apolloKey3:     "int_apollo_key3",
+  openaiKey:      "int_openai_key",
+  openaiModel:    "int_openai_model",
+  ngrokUrl:       "int_ngrok_url",
+  geminiKey:      "int_gemini_key",
+  geminiModel:    "int_gemini_model",
+  perplexityKey:  "int_perplexity_key",
 } as const;
 
 // ─── Settings storage ────────────────────────────────────────
 export const IntegrationSettings = {
-  get apolloKey():   string { return localStorage.getItem(KEYS.apolloKey)   ?? ""; },
-  get openaiKey():   string { return localStorage.getItem(KEYS.openaiKey)   ?? ""; },
+  get apolloKey():   string { return localStorage.getItem(KEYS.apolloKey)   ?? DEFAULTS.apolloKey; },
+  get apolloKey2():  string { return localStorage.getItem(KEYS.apolloKey2)  ?? DEFAULTS.apolloKey2; },
+  get apolloKey3():  string { return localStorage.getItem(KEYS.apolloKey3)  ?? DEFAULTS.apolloKey3; },
+  get openaiKey():   string { return localStorage.getItem(KEYS.openaiKey)   ?? DEFAULTS.openaiKey; },
   get openaiModel(): string { return localStorage.getItem(KEYS.openaiModel) ?? "gpt-4o"; },
-  get ngrokUrl():    string { return localStorage.getItem(KEYS.ngrokUrl)    ?? ""; },
-  get geminiKey():   string { return localStorage.getItem(KEYS.geminiKey)   ?? ""; },
-  get geminiModel(): string { return localStorage.getItem(KEYS.geminiModel) ?? "gemini-2.0-flash"; },
+  get ngrokUrl():    string { return localStorage.getItem(KEYS.ngrokUrl)    ?? DEFAULTS.ngrokUrl; },
+  get geminiKey():      string { return localStorage.getItem(KEYS.geminiKey)      ?? ""; },
+  get geminiModel():    string { return localStorage.getItem(KEYS.geminiModel)    ?? "gemini-2.0-flash"; },
+  get perplexityKey():  string { return localStorage.getItem(KEYS.perplexityKey)  ?? ""; },
 
-  save(patch: Partial<{
-    apolloKey: string; openaiKey: string; openaiModel: string;
-    ngrokUrl: string; geminiKey: string; geminiModel: string;
-  }>) {
-    if (patch.apolloKey   !== undefined) localStorage.setItem(KEYS.apolloKey,   patch.apolloKey);
-    if (patch.openaiKey   !== undefined) localStorage.setItem(KEYS.openaiKey,   patch.openaiKey);
-    if (patch.openaiModel !== undefined) localStorage.setItem(KEYS.openaiModel, patch.openaiModel);
-    if (patch.ngrokUrl    !== undefined) localStorage.setItem(KEYS.ngrokUrl,    patch.ngrokUrl);
-    if (patch.geminiKey   !== undefined) localStorage.setItem(KEYS.geminiKey,   patch.geminiKey);
-    if (patch.geminiModel !== undefined) localStorage.setItem(KEYS.geminiModel, patch.geminiModel);
+  /** Retorna as 3 chaves Apollo em ordem — usadas com fallback automático. */
+  apolloKeys(): string[] {
+    return [
+      IntegrationSettings.apolloKey,
+      IntegrationSettings.apolloKey2,
+      IntegrationSettings.apolloKey3,
+    ].filter(Boolean);
   },
 
-  isApolloReady():  boolean { return !!IntegrationSettings.apolloKey; },
-  isOpenAIReady():  boolean { return !!IntegrationSettings.openaiKey; },
-  isGeminiReady():  boolean { return !!IntegrationSettings.geminiKey; },
+  save(patch: Partial<{
+    apolloKey: string; apolloKey2: string; apolloKey3: string;
+    openaiKey: string; openaiModel: string;
+    ngrokUrl: string; geminiKey: string; geminiModel: string;
+    perplexityKey: string;
+  }>) {
+    if (patch.apolloKey      !== undefined) localStorage.setItem(KEYS.apolloKey,      patch.apolloKey);
+    if (patch.apolloKey2     !== undefined) localStorage.setItem(KEYS.apolloKey2,     patch.apolloKey2);
+    if (patch.apolloKey3     !== undefined) localStorage.setItem(KEYS.apolloKey3,     patch.apolloKey3);
+    if (patch.openaiKey      !== undefined) localStorage.setItem(KEYS.openaiKey,      patch.openaiKey);
+    if (patch.openaiModel    !== undefined) localStorage.setItem(KEYS.openaiModel,    patch.openaiModel);
+    if (patch.ngrokUrl       !== undefined) localStorage.setItem(KEYS.ngrokUrl,       patch.ngrokUrl);
+    if (patch.geminiKey      !== undefined) localStorage.setItem(KEYS.geminiKey,      patch.geminiKey);
+    if (patch.geminiModel    !== undefined) localStorage.setItem(KEYS.geminiModel,    patch.geminiModel);
+    if (patch.perplexityKey  !== undefined) localStorage.setItem(KEYS.perplexityKey,  patch.perplexityKey);
+  },
+
+  isApolloReady():      boolean { return !!IntegrationSettings.apolloKey; },
+  isOpenAIReady():      boolean { return !!IntegrationSettings.openaiKey; },
+  isGeminiReady():      boolean { return !!IntegrationSettings.geminiKey; },
+  isPerplexityReady():  boolean { return !!IntegrationSettings.perplexityKey; },
 };
 
 // ─── Apollo.io ───────────────────────────────────────────────
 export interface ApolloEnrichResult {
   name?: string;
   email?: string;
-  phone?: string;          // mobile number via ngrok proxy
+  emails?: string[];       // todos os e-mails (work + personal)
+  phone?: string;          // primeiro número disponível
+  phones?: string[];       // todos os números
   linkedin_url?: string;
   title?: string;
   organization?: {
@@ -70,62 +102,135 @@ export async function apolloEnrichPerson(params: {
   name?: string;
   domain?: string;
   organizationName?: string;
+  linkedinUrl?: string;
 }): Promise<ApolloEnrichResult> {
-  const { apolloKey, ngrokUrl } = IntegrationSettings;
+  const keys = IntegrationSettings.apolloKeys();
+  const { ngrokUrl } = IntegrationSettings;
 
-  if (!apolloKey) return { error: "Apollo.io API key não configurada." };
+  // Usa proxy backend (sem CORS) quando disponível
+  if (ngrokUrl) {
+    const endpoint = `${ngrokUrl.replace(/\/$/, "")}/people/match`;
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: params.email,
+          name: params.name,
+          organization_name: params.organizationName,
+          linkedin_url: params.linkedinUrl,
+          api_keys: keys,   // passa as 3 chaves para rotação no backend
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        return { error: `Erro no proxy ${res.status}: ${err}` };
+      }
+      const data = await res.json();
+      if (data.error) return { error: data.error };
+      const p = data.person ?? data;
 
-  const body = {
-    api_key: apolloKey,
-    reveal_personal_emails: true,
-    reveal_phone_number: true,
-    ...params,
-  };
+      // Coleta todos os telefones
+      const allPhones: string[] = (p.phone_numbers ?? [])
+        .map((n: { sanitized_number?: string; raw_number?: string }) => n.sanitized_number ?? n.raw_number ?? "")
+        .filter(Boolean);
 
-  // Se tiver ngrok, usa o proxy (retorna mobile)
-  const endpoint = ngrokUrl
-    ? `${ngrokUrl.replace(/\/$/, "")}/enrich`
-    : "https://api.apollo.io/v1/people/match";
+      // Coleta todos os e-mails (work + personal)
+      const allEmails: string[] = [
+        ...(p.email ? [p.email] : []),
+        ...(p.personal_emails ?? []),
+      ].filter((v: string, i: number, a: string[]) => v && a.indexOf(v) === i);
 
-  try {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    // Sem ngrok: credencial vai no body (Apollo aceita api_key no body)
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      return { error: `Apollo.io error ${res.status}: ${err}` };
+      return {
+        name:         p.name,
+        email:        allEmails[0] ?? p.email,
+        emails:       allEmails,
+        phone:        allPhones[0],
+        phones:       allPhones,
+        linkedin_url: p.linkedin_url,
+        title:        p.title,
+        organization: p.organization ? {
+          name:                    p.organization.name,
+          website_url:             p.organization.website_url,
+          estimated_num_employees: p.organization.estimated_num_employees,
+          industry:                p.organization.industry,
+          city:                    p.organization.city,
+          state:                   p.organization.state,
+          annual_revenue:          p.organization.annual_revenue,
+        } : undefined,
+      };
+    } catch (e: unknown) {
+      return { error: e instanceof Error ? e.message : String(e) };
     }
-
-    const data = await res.json();
-    const p = data.person ?? data;
-
-    return {
-      name:         p.name,
-      email:        p.email,
-      phone:        p.phone_numbers?.[0]?.sanitized_number ?? p.phone,
-      linkedin_url: p.linkedin_url,
-      title:        p.title,
-      organization: p.organization
-        ? {
-            name:                      p.organization.name,
-            website_url:               p.organization.website_url,
-            estimated_num_employees:   p.organization.estimated_num_employees,
-            industry:                  p.organization.industry,
-            city:                      p.organization.city,
-            state:                     p.organization.state,
-            annual_revenue:            p.organization.annual_revenue,
-          }
-        : undefined,
-    };
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { error: `Falha na requisição: ${msg}` };
   }
+
+  if (!keys.length) return { error: "Apollo.io API key não configurada." };
+
+  let lastError = "";
+
+  for (const apiKey of keys) {
+    const body = {
+      api_key: apiKey,
+      reveal_personal_emails: true,
+      reveal_phone_number: true,
+      ...params,
+    };
+
+    try {
+      const res = await fetch("https://api.apollo.io/v1/people/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      // Tenta próxima key se limite atingido
+      if (res.status === 429 || res.status === 403) {
+        lastError = `Apollo.io key ${apiKey.slice(0, 6)}… error ${res.status}`;
+        continue;
+      }
+
+      if (!res.ok) {
+        const err = await res.text();
+        return { error: `Apollo.io error ${res.status}: ${err}` };
+      }
+
+      const data = await res.json();
+      const p = data.person ?? data;
+
+      const allPhones: string[] = (p.phone_numbers ?? [])
+        .map((n: { sanitized_number?: string; raw_number?: string }) => n.sanitized_number ?? n.raw_number ?? "")
+        .filter(Boolean);
+      const allEmails: string[] = [
+        ...(p.email ? [p.email] : []),
+        ...(p.personal_emails ?? []),
+      ].filter((v: string, i: number, a: string[]) => v && a.indexOf(v) === i);
+
+      return {
+        name:         p.name,
+        email:        allEmails[0] ?? p.email,
+        emails:       allEmails,
+        phone:        allPhones[0],
+        phones:       allPhones,
+        linkedin_url: p.linkedin_url,
+        title:        p.title,
+        organization: p.organization
+          ? {
+              name:                      p.organization.name,
+              website_url:               p.organization.website_url,
+              estimated_num_employees:   p.organization.estimated_num_employees,
+              industry:                  p.organization.industry,
+              city:                      p.organization.city,
+              state:                     p.organization.state,
+              annual_revenue:            p.organization.annual_revenue,
+            }
+          : undefined,
+      };
+    } catch (e: unknown) {
+      lastError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  return { error: lastError || "Todas as chaves Apollo falharam." };
 }
 
 /**
@@ -256,6 +361,55 @@ export async function geminiChat(
 
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    return { content: text };
+  } catch (e: unknown) {
+    return { content: "", error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+// ─── Perplexity ──────────────────────────────────────────────
+/**
+ * Pesquisa contextual via Perplexity Sonar (busca web em tempo real).
+ * Retorna um resumo sobre a pessoa: histórico, empresa, cargo, notícias recentes.
+ */
+export async function perplexityResearch(params: {
+  name: string;
+  company?: string;
+  role?: string;
+  linkedin?: string;
+}): Promise<{ content: string; error?: string }> {
+  const key = IntegrationSettings.perplexityKey;
+  if (!key) return { content: "", error: "Chave do Perplexity não configurada. Acesse Configurações > Perplexity." };
+
+  const query = [
+    `Pesquise informações sobre ${params.name}`,
+    params.role ? `cargo: ${params.role}` : "",
+    params.company ? `empresa: ${params.company}` : "",
+    params.linkedin ? `LinkedIn: ${params.linkedin}` : "",
+    "— inclua: histórico profissional, empresa atual, área de atuação, notícias recentes ou projetos relevantes. Responda em português, de forma objetiva.",
+  ].filter(Boolean).join(", ");
+
+  try {
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: "sonar",
+        messages: [{ role: "user", content: query }],
+        max_tokens: 600,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      return { content: "", error: `Perplexity error ${res.status}: ${err}` };
+    }
+
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content ?? "";
     return { content: text };
   } catch (e: unknown) {
     return { content: "", error: e instanceof Error ? e.message : String(e) };
